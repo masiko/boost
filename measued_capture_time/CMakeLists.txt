@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-project(boost_timer)
+project(measured_capture_time)
 
 set(ENV{Boost_DIR})
 
@@ -25,8 +25,8 @@ link_directories(
 )
 
 find_package(OpenCV REQUIRED)
-add_executable(boost_timer boost_timer.cpp)
-target_link_libraries( boost_timer ${Boost_LIBS} )
-target_link_libraries( boost_timer ${OpenCV_LIBS} )
+add_executable(measured_capture_time measured_cap_time.cpp)
+target_link_libraries( measured_capture_time ${Boost_LIBS} )
+target_link_libraries( measured_capture_time ${OpenCV_LIBS} )
 
 

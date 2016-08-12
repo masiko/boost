@@ -7,14 +7,21 @@
 
 static boost::thread capture_thread;
 static boost::mutex lock_obj;
+boost::timer timer;
 cv::VideoCapture cap;
 cv::Mat img1;
+int cap_count=0;
 
-void thread_cap() {
- 	boost::mutex::scoped_lock loc(lock_obj);
+void get_img() {
+	boost::mutex::scoped_lock loc(lock_obj);
 	cap >> img1;
-	boost::this_thread::sleep(boost::posix_time::milliseconds(20));
-
+}
+void thread_cap() {
+	for (;;) {
+		get_img();
+		boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+		cap_count++;
+	}
 }
 
 unsigned char acess_mat(unsigned char* p, int size){
@@ -33,11 +40,9 @@ int main(){
 	unsigned char *p;
 	std::ofstream ofs("OpencvCapyureAndAccessTime.txt");
 
-	//cv::Mat img1;
-	boost::timer timer;
-
+	double result_mat = timer.elapsed();
 	//device Open
-	cap.open(0);
+	cap.open(CV_CAP_DSHOW + 0);
 	if (!cap.isOpened()) {
 		std::cout<<"can't open camera device!!\n";
 		return -1;
@@ -59,28 +64,35 @@ int main(){
 		}
 		p = img1.data;
 	}
-	double result_mat = timer.elapsed();
+	result_mat = timer.elapsed();
 	std::cout <<"cap >> cv::Mat : ";
 	std::cout << result_mat << std::endl;
 	ofs <<"cap >> cv::Mat : " << result_mat << std::endl;
+	
 
-
-
-
+	double cap_pos0 = 0;
+	double cap_pos1 = 0;
+	p = img1.data;
 	capture_thread = boost::thread(thread_cap);
 
-	p = img1.data;
 	timer.restart();
 	for (int i=0; i<100; i++) {
-	 	for (int j=0; j<size; j++) {
-		 	val = acess_mat(p,size);
+	 	cap_pos1 = cap.get(CV_CAP_PROP_POS_MSEC);
+		ofs <<cap_pos1<<std::endl;
+		if ( cap_pos1 != cap_pos0) {
+		//	i++;
+			cap_pos0 = cap_pos1;
 		}
+		val = acess_mat(p,size);
 		p = img1.data;
+		boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 	}
 	result_mat = timer.elapsed();
 	std::cout <<"thread_cap : ";
 	std::cout << result_mat << std::endl;
 	ofs <<"thread_cap : " << result_mat << std::endl;
+
+	std::cout << cap_count << std::endl;
 	cv::waitKey(0);
 
 	return 0;
